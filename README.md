@@ -203,28 +203,32 @@ Cluster returns to `HEALTH_OK` as data rebalances back.
 # Cluster health overview
 ceph -s
 ceph health detail
+```
 <img width="601" height="314" alt="image" src="https://github.com/user-attachments/assets/1ee1e00b-d24a-4f2f-b21a-4d7a1dab2741" />
-
+```bash
 # OSD layout and status
 ceph osd tree
 ceph osd stat
 ceph osd df
+```
 <img width="886" height="434" alt="image" src="https://github.com/user-attachments/assets/ed239bc1-1abe-4132-a69e-fc0d2a31e332" />
-
+```bash
 # Pool and capacity
 ceph df
 ceph osd pool ls detail
+```
 <img width="1276" height="280" alt="image" src="https://github.com/user-attachments/assets/5dd7f546-7c18-4fab-8b30-3d3ad336a01c" />
-
+```bash
 # Live activity stream
 ceph -w
+```
 <img width="624" height="293" alt="image" src="https://github.com/user-attachments/assets/eb62997e-9033-4491-bd2d-c42f6ee3b71d" />
-
+```bash
 # Performance
 ceph osd perf
+```
 <img width="354" height="147" alt="image" src="https://github.com/user-attachments/assets/86a356ec-02e5-4684-8f84-1a3818c90f5f" />
 
-```
 
 ---
 
