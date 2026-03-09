@@ -45,6 +45,8 @@ A self-directed home lab project to develop hands-on open-source Ceph administra
 | RBD pool mirroring | SRDF synchronous/asynchronous replication |
 | OSD failure simulation & recovery | DAE drive failure / RAID rebuild |
 | CRUSH map topology | SAN zoning / fabric layout |
+| CephFS shared filesystem | NAS / shared storage for multi-host workloads |
+| Active/standby MDS | Automated metadata server failover / HA |
 
 ---
 
@@ -168,7 +170,58 @@ rbd mirror image status rbd-pool/test-lun-01
 **EMC parallel:** RBD snapshot mirroring replicates block device state between pools/clusters — the same concept as SRDF/A (asynchronous) replication between VMAX arrays across sites.
 
 ---
+## CephFS — Shared Filesystem
 
+CephFS provides a POSIX-compliant shared filesystem across all cluster nodes, backed by the same RADOS object store as RBD. Common enterprise use cases include VM shared storage, HPC workloads, and Kubernetes persistent volumes.
+
+### Deploy CephFS
+
+```bash
+ceph fs volume create myfs
+```
+
+Ceph automatically creates two backing pools (`cephfs.myfs.data` and `cephfs.myfs.meta`) and deploys MDS daemons across the cluster.
+
+### Verify MDS Status
+
+```bash
+ceph fs status myfs
+```
+
+Output confirms active/standby MDS deployment across node2 and node3 — automatic high availability with no manual configuration required:
+
+<img width="732" height="201" alt="image" src="https://github.com/user-attachments/assets/36803cd3-9383-4392-82e9-3b9ae23b9a43" />
+
+
+**Active MDS on node2, Standby MDS on node3** — if node2 fails, node3 promotes automatically. Direct parallel to SRDF automated site failover.
+
+### Mount on All Nodes
+
+```bash
+mkdir /mnt/cephfs
+ceph auth get-key client.admin
+mount -t ceph ceph-node1.lab:/ /mnt/cephfs -o name=admin,secret=<admin-key>
+```
+
+Repeat on node2 and node3 using the same key.
+
+### Verify Shared Access
+
+Write a file on node1:
+```bash
+echo "CephFS test file from node1" > /mnt/cephfs/testfile.txt
+```
+
+Read it from node2 and node3:
+```bash
+cat /mnt/cephfs/testfile.txt
+```
+<img width="1959" height="755" alt="SharedFileSystem" src="https://github.com/user-attachments/assets/56df8803-ed3b-437c-8d62-bda5720f0fe4" />
+
+
+File written on node1 is instantly visible on node2 and node3 — demonstrating true shared filesystem access across all cluster hosts simultaneously.
+
+---
 ## OSD Failure Simulation
 
 Simulate a drive failure and observe cluster self-healing:
