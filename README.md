@@ -47,6 +47,7 @@ A self-directed home lab project to develop hands-on open-source Ceph administra
 | CRUSH map topology | SAN zoning / fabric layout |
 | CephFS shared filesystem | NAS / shared storage for multi-host workloads |
 | Active/standby MDS | Automated metadata server failover / HA |
+| RGW object storage | S3-compatible object storage endpoint |
 
 ---
 
@@ -218,10 +219,59 @@ cat /mnt/cephfs/testfile.txt
 ```
 <img width="1959" height="755" alt="SharedFileSystem" src="https://github.com/user-attachments/assets/56df8803-ed3b-437c-8d62-bda5720f0fe4" />
 
-
 File written on node1 is instantly visible on node2 and node3 — demonstrating true shared filesystem access across all cluster hosts simultaneously.
 
 ---
+
+## RGW — S3-Compatible Object Storage
+
+Ceph Rados Gateway (RGW) provides an S3-compatible object storage endpoint, enabling bucket and object operations using standard S3 tooling.
+
+### Deploy RGW
+
+```bash
+ceph orch apply rgw myrgw --placement="1 ceph-node1"
+```
+
+Verify:
+```bash
+ceph orch ps --daemon-type rgw
+```
+
+RGW listens on port 80 of node1: `http://192.168.56.101:80`
+
+### Create a User
+
+```bash
+radosgw-admin user create \
+  --uid="labuser" \
+  --display-name="Lab User" \
+  --email="lab@lab.com"
+```
+
+Copy the `access_key` and `secret_key` from the JSON output.
+
+### Configure S3 Client and Test
+
+```bash
+dnf install -y python3-pip
+pip3 install awscli
+aws configure  # enter access_key, secret_key, region us-east-1
+
+# Create bucket and upload object
+aws --endpoint-url http://192.168.56.101:80 s3 mb s3://lab-bucket
+echo "Ceph object storage test" > testobject.txt
+aws --endpoint-url http://192.168.56.101:80 s3 cp testobject.txt s3://lab-bucket/
+aws --endpoint-url http://192.168.56.101:80 s3 ls s3://lab-bucket
+```
+
+Expected output:
+```
+2026-03-10 11:40:37    25 testobject.txt
+```
+
+---
+
 ## OSD Failure Simulation
 
 Simulate a drive failure and observe cluster self-healing:
